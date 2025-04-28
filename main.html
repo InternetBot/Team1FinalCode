@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Immunization Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Apply Inter font globally */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Basic styling for tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #e2e8f0; /* gray-300 */
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        /* Hide elements by default */
+        .hidden {
+            display: none;
+        }
+        /* Custom scrollbar for tables if needed */
+        .table-container {
+            max-height: 400px; /* Adjust as needed */
+            overflow-y: auto;
+        }
+        /* Style for message box */
+        #messageBox {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: 8px;
+            color: white;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        #messageBox.success {
+            background-color: #22c55e; /* green-500 */
+            opacity: 1;
+        }
+        #messageBox.error {
+            background-color: #ef4444; /* red-500 */
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div id="loginScreen" class="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-700">Immunization Tracker Login</h1>
+        <form id="loginForm">
+            <div class="mb-4">
+                <label for="username" class="block text-sm font-medium text-gray-600 mb-1">Username</label>
+                <input type="text" id="username" name="username" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your username">
+            </div>
+            <div class="mb-6">
+                <label for="password" class="block text-sm font-medium text-gray-600 mb-1">Password</label>
+                <input type="password" id="password" name="password" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="password">
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200">Login</button>
+        </form>
+        <p id="loginError" class="text-red-500 text-sm mt-4 text-center"></p>
+        <div class="mt-4 text-center">
+            <button id="showRegisterForm" class="text-blue-600 hover:text-blue-800">Don't have an account? Register here</button>
+        </div>
+    </div>
+
+    <div id="registerScreen" class="hidden w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-700">Create New Account</h1>
+        <form id="registerForm">
+            <div class="mb-4">
+                <label for="regName" class="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
+                <input type="text" id="regName" name="regName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="mb-4">
+                <label for="regDob" class="block text-sm font-medium text-gray-600 mb-1">Date of Birth</label>
+                <input type="date" id="regDob" name="regDob" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="mb-4">
+                <label for="regIdentifier" class="block text-sm font-medium text-gray-600 mb-1">Identifier (optional)</label>
+                <input type="text" id="regIdentifier" name="regIdentifier" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Employee/Student ID">
+            </div>
+            <div class="mb-4">
+                <label for="regUsername" class="block text-sm font-medium text-gray-600 mb-1">Username</label>
+                <input type="text" id="regUsername" name="regUsername" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="mb-6">
+                <label for="regPassword" class="block text-sm font-medium text-gray-600 mb-1">Password</label>
+                <input type="password" id="regPassword" name="regPassword" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition duration-200">Register</button>
+        </form>
+        <p id="registerError" class="text-red-500 text-sm mt-4 text-center"></p>
+        <div class="mt-4 text-center">
+            <button id="showLoginForm" class="text-blue-600 hover:text-blue-800">Already have an account? Login here</button>
+        </div>
+    </div>
+
+    <div id="appArea" class="hidden w-full max-w-6xl bg-white p-6 md:p-8 rounded-lg shadow-md mt-6">
+        <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+            <h1 class="text-2xl font-bold text-gray-800">Immunization Tracker</h1>
+            <div>
+                <span id="loggedInUser" class="text-gray-600 mr-4"></span>
+                <button id="logoutButton" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded-md text-sm transition duration-200">Logout</button>
+            </div>
+        </div>
+
+        <div id="messageBox"></div>
+
+        <div id="userDashboard" class="hidden space-y-6">
+            <h2 class="text-xl font-semibold text-gray-700">My Immunization Records</h2>
+            <div class="table-container border border-gray-200 rounded-md">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vaccine</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Administered</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dose</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded On</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userRecordsTableBody" class="bg-white divide-y divide-gray-200">
+                        <tr><td colspan="5" class="text-center py-4 text-gray-500">No records found.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 class="text-xl font-semibold text-gray-700 pt-4 border-t border-gray-200">Upload New Record</h2>
+            <form id="userUploadForm" class="space-y-4 p-4 border border-gray-200 rounded-md bg-gray-50">
+                 <div>
+                     <label for="userVaccineName" class="block text-sm font-medium text-gray-600 mb-1">Vaccine Name</label>
+                     <input type="text" id="userVaccineName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                 </div>
+                 <div>
+                     <label for="userVaccineDate" class="block text-sm font-medium text-gray-600 mb-1">Date Administered</label>
+                     <input type="date" id="userVaccineDate" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                 </div>
+                 <div>
+                     <label for="userVaccineDose" class="block text-sm font-medium text-gray-600 mb-1">Dose Number (optional)</label>
+                     <input type="number" id="userVaccineDose" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                 </div>
+                 <div>
+                     <label for="userVaccineFile" class="block text-sm font-medium text-gray-600 mb-1">Upload Document</label>
+                     <input type="file" id="userVaccineFile" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                     <p class="text-xs text-gray-500 mt-1">Upload PDF, JPG, or PNG.</p>
+                 </div>
+                 <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition duration-200">Upload Record</button>
+            </form>
+        </div>
+
+        <div id="adminDashboard" class="hidden space-y-6">
+            <h2 class="text-xl font-semibold text-gray-700">All User Immunization Records (View Only)</h2>
+            <button id="viewUsersButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200 mb-4">View All Users</button>
+            <div id="usersList" class="hidden">
+                <div class="table-container border border-gray-200 rounded-md">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DOB</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identifier</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersListBody" class="bg-white divide-y divide-gray-200">
+                            <tr><td colspan="7" class="text-center py-4 text-gray-500">Loading users...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="table-container border border-gray-200 rounded-md">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Name</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vaccine</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Administered</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded On</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded By</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminRecordsTableBody" class="bg-white divide-y divide-gray-200">
+                        <tr><td colspan="7" class="text-center py-4 text-gray-500">Loading records...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="sysadminDashboard" class="hidden space-y-8">
+            <section>
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">User Management</h2>
+                 <div class="table-container border border-gray-200 rounded-md mb-4">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DOB</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identifier</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Login Username</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sysadminUsersTableBody" class="bg-white divide-y divide-gray-200">
+                            <tr><td colspan="6" class="text-center py-4 text-gray-500">Loading users...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Add New User / Account</h3>
+                <form id="sysadminAddUserForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-gray-200 rounded-md bg-gray-50">
+                    <div>
+                        <label for="sysadminUserName" class="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
+                        <input type="text" id="sysadminUserName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="sysadminUserDob" class="block text-sm font-medium text-gray-600 mb-1">Date of Birth</label>
+                        <input type="date" id="sysadminUserDob" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="sysadminUserIdentifier" class="block text-sm font-medium text-gray-600 mb-1">Identifier (e.g., Employee/Student ID)</label>
+                        <input type="text" id="sysadminUserIdentifier" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="sysadminAccountUsername" class="block text-sm font-medium text-gray-600 mb-1">Login Username</label>
+                        <input type="text" id="sysadminAccountUsername" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="sysadminAccountPassword" class="block text-sm font-medium text-gray-600 mb-1">Login Password</label>
+                        <input type="password" id="sysadminAccountPassword" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                     <div>
+                        <label for="sysadminAccountRole" class="block text-sm font-medium text-gray-600 mb-1">Account Role</label>
+                        <select id="sysadminAccountRole" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                            <option value="User">User</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Sysadmin">Sysadmin</option>
+                            <option value="Frontdesk">Frontdesk</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200">Add User & Account</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="pt-6 border-t border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">All Immunization Records (Manage)</h2>
+                 <div class="table-container border border-gray-200 rounded-md">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Record ID</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Name</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vaccine</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded By</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sysadminRecordsTableBody" class="bg-white divide-y divide-gray-200">
+                            <tr><td colspan="7" class="text-center py-4 text-gray-500">Loading records...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-2">Add New Record for User</h3>
+                 <form id="sysadminAddRecordForm" class="space-y-4 p-4 border border-gray-200 rounded-md bg-gray-50">
+                     <div>
+                         <label for="sysadminSelectUserForRecord" class="block text-sm font-medium text-gray-600 mb-1">Select User</label>
+                         <select id="sysadminSelectUserForRecord" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                             <option value="">-- Select User --</option>
+                             </select>
+                     </div>
+                     <div>
+                         <label for="sysadminVaccineName" class="block text-sm font-medium text-gray-600 mb-1">Vaccine Name</label>
+                         <input type="text" id="sysadminVaccineName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                     </div>
+                     <div>
+                         <label for="sysadminVaccineDate" class="block text-sm font-medium text-gray-600 mb-1">Date Administered</label>
+                         <input type="date" id="sysadminVaccineDate" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                     </div>
+                     <div>
+                         <label for="sysadminVaccineDose" class="block text-sm font-medium text-gray-600 mb-1">Dose Number (optional)</label>
+                         <input type="number" id="sysadminVaccineDose" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                     </div>
+                     <div>
+                         <label for="sysadminVaccineFile" class="block text-sm font-medium text-gray-600 mb-1">Upload Document</label>
+                         <input type="file" id="sysadminVaccineFile" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                          <p class="text-xs text-gray-500 mt-1">Upload PDF, JPG, or PNG.</p>
+                     </div>
+                     <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition duration-200">Add Record</button>
+                 </form>
+            </section>
+        </div>
+
+        <div id="frontdeskDashboard" class="hidden space-y-8">
+             <section>
+                 <h2 class="text-xl font-semibold text-gray-700 mb-4">Create New User Profile</h2>
+                 <form id="frontdeskAddUserForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-gray-200 rounded-md bg-gray-50">
+                    <div>
+                        <label for="frontdeskUserName" class="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
+                        <input type="text" id="frontdeskUserName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="frontdeskUserDob" class="block text-sm font-medium text-gray-600 mb-1">Date of Birth</label>
+                        <input type="date" id="frontdeskUserDob" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="frontdeskUserIdentifier" class="block text-sm font-medium text-gray-600 mb-1">Identifier (e.g., Employee/Student ID)</label>
+                        <input type="text" id="frontdeskUserIdentifier" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <p class="text-sm text-gray-600 md:col-span-2">Note: A default 'User' role account will be created. The username will be generated (e.g., userX) and password set to 'password'. The user or Sysadmin can change this later.</p>
+                    <div class="md:col-span-2">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200">Create User Profile</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="pt-6 border-t border-gray-200">
+                 <h2 class="text-xl font-semibold text-gray-700 mb-4">Upload Record for Existing User</h2>
+                 <form id="frontdeskUploadForm" class="space-y-4 p-4 border border-gray-200 rounded-md bg-gray-50">
+                     <div>
+                         <label for="frontdeskSelectUser" class="block text-sm font-medium text-gray-600 mb-1">Select User</label>
+                         <select id="frontdeskSelectUser" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                             <option value="">-- Select User --</option>
+                             </select>
+                     </div>
+                     <div>
+                         <label for="frontdeskVaccineName" class="block text-sm font-medium text-gray-600 mb-1">Vaccine Name</label>
+                         <input type="text" id="frontdeskVaccineName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                     </div>
+                     <div>
+                         <label for="frontdeskVaccineDate" class="block text-sm font-medium text-gray-600 mb-1">Date Administered</label>
+                         <input type="date" id="frontdeskVaccineDate" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                     </div>
+                     <div>
+                         <label for="frontdeskVaccineDose" class="block text-sm font-medium text-gray-600 mb-1">Dose Number (optional)</label>
+                         <input type="number" id="frontdeskVaccineDose" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                     </div>
+                     <div>
+                         <label for="frontdeskVaccineFile" class="block text-sm font-medium text-gray-600 mb-1">Upload Document</label>
+                         <input type="file" id="frontdeskVaccineFile" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                         <p class="text-xs text-gray-500 mt-1">Upload PDF, JPG, or PNG.</p>
+                     </div>
+                     <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition duration-200">Upload Record</button>
+                 </form>
+            </section>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Data Storage Simulation (localStorage) ---
+        const DB_ACCOUNTS = 'immunization_accounts';
+        const DB_USERS = 'immunization_users';
+        const DB_RECORDS = 'immunization_records';
+        const SESSION_USER = 'immunization_sessionUser';
+
+        // Function to get data from localStorage
+        function getData(key) {
+            return JSON.parse(localStorage.getItem(key) || '[]');
+        }
+
+        // Function to save data to localStorage
+        function saveData(key, data) {
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+
+        // Function to get current session user
+        function getSessionUser() {
+             return JSON.parse(sessionStorage.getItem(SESSION_USER) || 'null');
+        }
+
+        // Function to set current session user
+        function setSessionUser(user) {
+            if (user) {
+                sessionStorage.setItem(SESSION_USER, JSON.stringify(user));
+            } else {
+                sessionStorage.removeItem(SESSION_USER);
+            }
+        }
+
+        // --- Initial Data Setup (Run once if localStorage is empty) ---
+        function initializeData() {
+            if (!localStorage.getItem(DB_ACCOUNTS)) {
+                 console.log("Initializing data...");
+                const initialAccounts = [
+                    { username: 'user1', password: 'password', role: 'User', userId: 1 },
+                    { username: 'user2', password: 'password', role: 'User', userId: 2 },
+                    { username: 'admin', password: 'password', role: 'Admin', userId: null }, // Admins might not be linked to a specific patient user
+                    { username: 'sysadmin', password: 'password', role: 'Sysadmin', userId: null },
+                    { username: 'frontdesk', password: 'password', role: 'Frontdesk', userId: null },
+                ];
+                saveData(DB_ACCOUNTS, initialAccounts);
+
+                const initialUsers = [
+                    { id: 1, name: 'Alice Smith', dob: '2000-01-15', identifier: 'S123' },
+                    { id: 2, name: 'Bob Johnson', dob: '1995-06-20', identifier: 'E456' },
+                    { id: 3, name: 'Charlie Brown', dob: '2010-11-01', identifier: 'S789' },
+                ];
+                saveData(DB_USERS, initialUsers);
+
+                const initialRecords = [
+                    { id: 101, userId: 1, vaccine: 'MMR', date: '2001-03-01', dose: 1, filename: 'mmr_record_alice.pdf', uploader: 'user1', timestamp: new Date().toISOString() },
+                    { id: 102, userId: 1, vaccine: 'Varicella', date: '2001-03-01', dose: 1, filename: 'varicella_alice.jpg', uploader: 'user1', timestamp: new Date().toISOString() },
+                    { id: 103, userId: 2, vaccine: 'Hepatitis B', date: '1995-07-10', dose: 1, filename: 'hepb_bob.png', uploader: 'frontdesk', timestamp: new Date().toISOString() },
+                     { id: 104, userId: 2, vaccine: 'Hepatitis B', date: '1995-08-10', dose: 2, filename: 'hepb2_bob.pdf', uploader: 'sysadmin', timestamp: new Date().toISOString() },
+                ];
+                saveData(DB_RECORDS, initialRecords);
+                 console.log("Initial data loaded.");
+            }
+        }
+
+        // --- Utility Functions ---
+        function getNextId(key) {
+            const data = getData(key);
+            if (data.length === 0) return 1;
+            // Find the maximum existing ID and add 1
+            const maxId = Math.max(...data.map(item => item.id));
+            return maxId + 1;
+        }
+
+         function findUserById(userId) {
+            const users = getData(DB_USERS);
+            return users.find(u => u.id === userId);
+        }
+
+        function findAccountByUsername(username) {
+            const accounts = getData(DB_ACCOUNTS);
+            return accounts.find(acc => acc.username === username);
+        }
+
+         function findAccountByUserId(userId) {
+            const accounts = getData(DB_ACCOUNTS);
+            return accounts.find(acc => acc.userId === userId);
+        }
+
+        function showMessage(message, type = 'success', duration = 3000) {
+            const box = document.getElementById('messageBox');
+            box.textContent = message;
+            box.className = type; // Add class 'success' or 'error'
+
+            // Make it visible
+             box.style.opacity = 1;
+
+            // Hide after duration
+            setTimeout(() => {
+                 box.style.opacity = 0;
+                 // Optional: Reset class after fade out
+                 setTimeout(() => box.className = '', 500);
+            }, duration);
+        }
+
+        // --- DOM Elements ---
+        const loginScreen = document.getElementById('loginScreen');
+        const appArea = document.getElementById('appArea');
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
+        const loggedInUserSpan = document.getElementById('loggedInUser');
+        const logoutButton = document.getElementById('logoutButton');
+
+        const userDashboard = document.getElementById('userDashboard');
+        const adminDashboard = document.getElementById('adminDashboard');
+        const sysadminDashboard = document.getElementById('sysadminDashboard');
+        const frontdeskDashboard = document.getElementById('frontdeskDashboard');
+
+        // Table bodies
+        const userRecordsTableBody = document.getElementById('userRecordsTableBody');
+        const adminRecordsTableBody = document.getElementById('adminRecordsTableBody');
+        const sysadminUsersTableBody = document.getElementById('sysadminUsersTableBody');
+        const sysadminRecordsTableBody = document.getElementById('sysadminRecordsTableBody');
+
+        // Forms
+        const userUploadForm = document.getElementById('userUploadForm');
+        const sysadminAddUserForm = document.getElementById('sysadminAddUserForm');
+        const sysadminAddRecordForm = document.getElementById('sysadminAddRecordForm');
+        const frontdeskAddUserForm = document.getElementById('frontdeskAddUserForm');
+        const frontdeskUploadForm = document.getElementById('frontdeskUploadForm');
+
+        // Select dropdowns for user selection
+        const sysadminSelectUserForRecord = document.getElementById('sysadminSelectUserForRecord');
+        const frontdeskSelectUser = document.getElementById('frontdeskSelectUser');
+
+        // Add these new variables
+        const registerScreen = document.getElementById('registerScreen');
+        const registerForm = document.getElementById('registerForm');
+        const showRegisterForm = document.getElementById('showRegisterForm');
+        const showLoginForm = document.getElementById('showLoginForm');
+        const registerError = document.getElementById('registerError');
+
+        // Add these new variables at the top
+        let sessionTimeout;
+        const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 hour in milliseconds
+
+        // Function to reset session timeout
+        function resetSessionTimeout() {
+            if (sessionTimeout) {
+                clearTimeout(sessionTimeout);
+            }
+            sessionTimeout = setTimeout(() => {
+                handleLogout();
+                showMessage('Session expired. Please login again.', 'error');
+            }, SESSION_TIMEOUT);
+        }
+
+        // Function to check session status
+        async function checkSession() {
+            try {
+                const response = await fetch('http://localhost:5000/api/records', {
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    handleLogout();
+                    showMessage('Session expired. Please login again.', 'error');
+                }
+            } catch (error) {
+                console.error('Session check error:', error);
+            }
+        }
+
+        // --- Core Application Logic ---
+
+        // Function to display the correct dashboard based on role
+        function showDashboard(role) {
+            // Hide all dashboards first
+            userDashboard.classList.add('hidden');
+            adminDashboard.classList.add('hidden');
+            sysadminDashboard.classList.add('hidden');
+            frontdeskDashboard.classList.add('hidden');
+
+            // Show the relevant dashboard
+            if (role === 'User') {
+                userDashboard.classList.remove('hidden');
+                loadUserRecords();
+            } else if (role === 'Admin') {
+                adminDashboard.classList.remove('hidden');
+                loadAdminRecords();
+            } else if (role === 'Sysadmin') {
+                sysadminDashboard.classList.remove('hidden');
+                loadSysadminUsers();
+                loadSysadminRecords();
+                populateUserSelect(sysadminSelectUserForRecord);
+            } else if (role === 'Frontdesk') {
+                frontdeskDashboard.classList.remove('hidden');
+                populateUserSelect(frontdeskSelectUser);
+            }
+
+            // Show app area, hide login
+            loginScreen.classList.add('hidden');
+            appArea.classList.remove('hidden');
+        }
+
+        // --- Data Loading Functions ---
+
+        async function loadUserRecords() {
+            const currentUser = getSessionUser();
+            if (!currentUser || currentUser.role !== 'User') return;
+
+            try {
+                const response = await fetch('http://localhost:5000/api/records', {
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to load records');
+                }
+                const records = await response.json();
+                const userRecords = records.filter(record => record.userId === currentUser.userId);
+
+                userRecordsTableBody.innerHTML = '';
+                if (userRecords.length === 0) {
+                    userRecordsTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-gray-500">No immunization records found.</td></tr>';
+                    return;
+                }
+
+                userRecords.forEach(record => {
+                    const row = `
+                        <tr>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${record.vaccine}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${record.date}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${record.dose || 'N/A'}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${record.filename}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${record.timestamp}</td>
+                        </tr>
+                    `;
+                    userRecordsTableBody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error('Error loading user records:', error);
+                showMessage('Error loading records.', 'error');
+            }
+        }
+
+        function loadAdminRecords() {
+            const allRecords = getData(DB_RECORDS);
+            const allUsers = getData(DB_USERS);
+            adminRecordsTableBody.innerHTML = ''; // Clear
+
+             if (allRecords.length === 0) {
+                adminRecordsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">No records found in the system.</td></tr>';
+                return;
+            }
+
+            allRecords.forEach(record => {
+                const user = findUserById(record.userId);
+                const userName = user ? user.name : 'Unknown User';
+                const row = `
+                    <tr>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${userName}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${record.userId}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${record.vaccine}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${record.date}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${record.filename}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${new Date(record.timestamp).toLocaleDateString()}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${record.uploader}</td>
+                    </tr>
+                `;
+                adminRecordsTableBody.innerHTML += row;
+            });
+        }
+
+        function loadSysadminUsers() {
+            const allUsers = getData(DB_USERS);
+            const allAccounts = getData(DB_ACCOUNTS);
+            sysadminUsersTableBody.innerHTML = ''; // Clear
+
+            if (allUsers.length === 0) {
+                sysadminUsersTableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-500">No users found.</td></tr>';
+                return;
+            }
+
+            allUsers.forEach(user => {
+                const account = findAccountByUserId(user.id);
+                const username = account ? account.username : 'N/A';
+                const row = `
+                    <tr>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${user.id}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${user.name}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${user.dob}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${user.identifier || 'N/A'}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${username}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium space-x-2">
+                             <button onclick="deleteUser(${user.id})" class="text-red-600 hover:text-red-800 transition duration-150 ease-in-out">Delete</button>
+                             </td>
+                    </tr>
+                `;
+                sysadminUsersTableBody.innerHTML += row;
+            });
+        }
+
+        function loadSysadminRecords() {
+             const allRecords = getData(DB_RECORDS);
+             const allUsers = getData(DB_USERS);
+             sysadminRecordsTableBody.innerHTML = ''; // Clear
+
+             if (allRecords.length === 0) {
+                sysadminRecordsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">No records found.</td></tr>';
+                return;
+            }
+
+             allRecords.forEach(record => {
+                const user = findUserById(record.userId);
+                const userName = user ? user.name : 'Unknown User';
+                const row = `
+                    <tr>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${record.id}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${userName} (ID: ${record.userId})</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-800">${record.vaccine}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${record.date}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${record.filename}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${record.uploader}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                            <button onclick="deleteRecord(${record.id})" class="text-red-600 hover:text-red-800 transition duration-150 ease-in-out">Delete</button>
+                        </td>
+                    </tr>
+                `;
+                sysadminRecordsTableBody.innerHTML += row;
+            });
+        }
+
+        // Function to populate user select dropdowns
+        function populateUserSelect(selectElement) {
+             const users = getData(DB_USERS);
+             selectElement.innerHTML = '<option value="">-- Select User --</option>'; // Clear existing options and add default
+             users.forEach(user => {
+                 const option = document.createElement('option');
+                 option.value = user.id;
+                 option.textContent = `${user.name} (ID: ${user.id})`;
+                 selectElement.appendChild(option);
+             });
+        }
+
+
+        // --- Action Functions ---
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            loginError.textContent = '';
+            const username = loginForm.username.value.trim();
+            const password = loginForm.password.value;
+
+            if (!username || !password) {
+                loginError.textContent = 'Please enter both username and password.';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    setSessionUser(data);
+                    loggedInUserSpan.textContent = `Logged in as: ${data.username} (${data.role})`;
+                    showDashboard(data.role);
+                    resetSessionTimeout();
+                } else {
+                    loginError.textContent = data.message || 'Invalid username or password.';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                loginError.textContent = 'Error connecting to server. Please try again.';
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await fetch('http://localhost:5000/api/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            } finally {
+                setSessionUser(null);
+                if (sessionTimeout) {
+                    clearTimeout(sessionTimeout);
+                }
+                appArea.classList.add('hidden');
+                loginScreen.classList.remove('hidden');
+                loginForm.reset();
+                loginError.textContent = '';
+            }
+        }
+
+        function handleRecordUpload(event, role) {
+             event.preventDefault();
+             const currentUser = getSessionUser();
+             if (!currentUser) return; // Should not happen if logged in
+
+             let userIdToAssign;
+             let vaccineName, vaccineDate, vaccineDose, vaccineFile, form;
+
+             if (role === 'User') {
+                 userIdToAssign = currentUser.userId;
+                 vaccineName = document.getElementById('userVaccineName').value;
+                 vaccineDate = document.getElementById('userVaccineDate').value;
+                 vaccineDose = document.getElementById('userVaccineDose').value;
+                 vaccineFile = document.getElementById('userVaccineFile').files[0];
+                 form = userUploadForm;
+             } else if (role === 'Frontdesk') {
+                 userIdToAssign = document.getElementById('frontdeskSelectUser').value;
+                 vaccineName = document.getElementById('frontdeskVaccineName').value;
+                 vaccineDate = document.getElementById('frontdeskVaccineDate').value;
+                 vaccineDose = document.getElementById('frontdeskVaccineDose').value;
+                 vaccineFile = document.getElementById('frontdeskVaccineFile').files[0];
+                 form = frontdeskUploadForm;
+             } else if (role === 'Sysadmin') {
+                 userIdToAssign = document.getElementById('sysadminSelectUserForRecord').value;
+                 vaccineName = document.getElementById('sysadminVaccineName').value;
+                 vaccineDate = document.getElementById('sysadminVaccineDate').value;
+                 vaccineDose = document.getElementById('sysadminVaccineDose').value;
+                 vaccineFile = document.getElementById('sysadminVaccineFile').files[0];
+                 form = sysadminAddRecordForm;
+             } else {
+                 console.error("Invalid role for upload:", role);
+                 return;
+             }
+
+             if (!userIdToAssign) {
+                 showMessage('Please select a user.', 'error');
+                 return;
+             }
+             if (!vaccineFile) {
+                  showMessage('Please select a file to upload.', 'error');
+                  return;
+             }
+
+             const records = getData(DB_RECORDS);
+             const newRecord = {
+                 id: getNextId(DB_RECORDS),
+                 userId: parseInt(userIdToAssign),
+                 vaccine: vaccineName.trim(),
+                 date: vaccineDate,
+                 dose: vaccineDose ? parseInt(vaccineDose) : null,
+                 filename: vaccineFile.name, // In real app, upload file and store URL/path
+                 uploader: currentUser.username,
+                 timestamp: new Date().toISOString()
+             };
+
+             records.push(newRecord);
+             saveData(DB_RECORDS, records);
+             showMessage('Record uploaded successfully!', 'success');
+             form.reset(); // Reset the form
+
+             // Refresh the relevant view
+             if (role === 'User') loadUserRecords();
+             if (role === 'Sysadmin') loadSysadminRecords();
+             // No need to refresh Frontdesk view immediately unless showing recent uploads
+        }
+
+        function handleAddUser(event, role) {
+            event.preventDefault();
+            const currentUser = getSessionUser();
+            if (!currentUser || (role !== 'Sysadmin' && role !== 'Frontdesk')) return;
+
+            let name, dob, identifier, username, password, accountRole, form;
+
+            if (role === 'Sysadmin') {
+                name = document.getElementById('sysadminUserName').value.trim();
+                dob = document.getElementById('sysadminUserDob').value;
+                identifier = document.getElementById('sysadminUserIdentifier').value.trim();
+                username = document.getElementById('sysadminAccountUsername').value.trim();
+                password = document.getElementById('sysadminAccountPassword').value; // Plain text (INSECURE!)
+                accountRole = document.getElementById('sysadminAccountRole').value;
+                form = sysadminAddUserForm;
+
+                if (!password) {
+                    showMessage('Password is required for Sysadmin user creation.', 'error');
+                    return;
+                }
+                 // Check if username already exists
+                 if (findAccountByUsername(username)) {
+                     showMessage(`Username '${username}' already exists.`, 'error');
+                     return;
+                 }
+
+            } else { // Frontdesk
+                name = document.getElementById('frontdeskUserName').value.trim();
+                dob = document.getElementById('frontdeskUserDob').value;
+                identifier = document.getElementById('frontdeskUserIdentifier').value.trim();
+                // Auto-generate username and password for Frontdesk creation
+                const users = getData(DB_USERS);
+                username = `user${getNextId(DB_USERS)}`; // Simple auto-username
+                password = 'password'; // Default password
+                accountRole = 'User';
+                form = frontdeskAddUserForm;
+            }
+
+            if (!name || !dob) {
+                 showMessage('Full Name and Date of Birth are required.', 'error');
+                 return;
+            }
+
+
+            const users = getData(DB_USERS);
+            const newUser = {
+                id: getNextId(DB_USERS),
+                name: name,
+                dob: dob,
+                identifier: identifier || null
+            };
+            users.push(newUser);
+            saveData(DB_USERS, users);
+
+            // Create associated account only if it's a 'User' role or specified by Sysadmin
+            if (accountRole) {
+                 const accounts = getData(DB_ACCOUNTS);
+                 const newAccount = {
+                     username: username,
+                     password: password, // Store plain text (INSECURE!)
+                     role: accountRole,
+                     userId: (accountRole === 'User') ? newUser.id : null // Link userId only for User roles
+                 };
+                 accounts.push(newAccount);
+                 saveData(DB_ACCOUNTS, accounts);
+            }
+
+
+            showMessage(`User '${name}' created successfully. ${role === 'Frontdesk' ? `Login: ${username}/password` : ''}`, 'success', 5000);
+            form.reset();
+
+            // Refresh relevant views
+            if (role === 'Sysadmin') {
+                loadSysadminUsers();
+                populateUserSelect(sysadminSelectUserForRecord); // Update dropdown
+            }
+             if (role === 'Frontdesk') {
+                 populateUserSelect(frontdeskSelectUser); // Update dropdown
+             }
+        }
+
+        function deleteUser(userId) {
+            if (!confirm(`Are you sure you want to delete user ID ${userId} and all associated records and their login account? This cannot be undone.`)) {
+                return;
+            }
+
+            const currentUser = getSessionUser();
+            if (!currentUser || currentUser.role !== 'Sysadmin') {
+                 showMessage('Permission denied.', 'error');
+                 return;
+            }
+
+            // 1. Delete User Profile
+            let users = getData(DB_USERS);
+            users = users.filter(user => user.id !== userId);
+            saveData(DB_USERS, users);
+
+            // 2. Delete Associated Records
+            let records = getData(DB_RECORDS);
+            records = records.filter(record => record.userId !== userId);
+            saveData(DB_RECORDS, records);
+
+             // 3. Delete Associated Account
+            let accounts = getData(DB_ACCOUNTS);
+            accounts = accounts.filter(account => account.userId !== userId);
+            saveData(DB_ACCOUNTS, accounts);
+
+            showMessage(`User ID ${userId} and associated data deleted.`, 'success');
+            loadSysadminUsers(); // Refresh user table
+            loadSysadminRecords(); // Refresh records table
+            populateUserSelect(sysadminSelectUserForRecord); // Refresh dropdown
+        }
+
+        function deleteRecord(recordId) {
+             if (!confirm(`Are you sure you want to delete record ID ${recordId}? This cannot be undone.`)) {
+                return;
+            }
+
+            const currentUser = getSessionUser();
+            if (!currentUser || currentUser.role !== 'Sysadmin') {
+                 showMessage('Permission denied.', 'error');
+                 return;
+            }
+
+            let records = getData(DB_RECORDS);
+            records = records.filter(record => record.id !== recordId);
+            saveData(DB_RECORDS, records);
+
+            showMessage(`Record ID ${recordId} deleted.`, 'success');
+            loadSysadminRecords(); // Refresh records table
+        }
+
+
+        // --- Event Listeners ---
+        loginForm.addEventListener('submit', handleLogin);
+        logoutButton.addEventListener('click', handleLogout);
+
+        // Record Upload Listeners
+        userUploadForm.addEventListener('submit', (e) => handleRecordUpload(e, 'User'));
+        frontdeskUploadForm.addEventListener('submit', (e) => handleRecordUpload(e, 'Frontdesk'));
+        sysadminAddRecordForm.addEventListener('submit', (e) => handleRecordUpload(e, 'Sysadmin'));
+
+
+        // User Creation Listeners
+        frontdeskAddUserForm.addEventListener('submit', (e) => handleAddUser(e, 'Frontdesk'));
+        sysadminAddUserForm.addEventListener('submit', (e) => handleAddUser(e, 'Sysadmin'));
+
+        // Add these new event listeners
+        showRegisterForm.addEventListener('click', () => {
+            loginScreen.classList.add('hidden');
+            registerScreen.classList.remove('hidden');
+        });
+
+        showLoginForm.addEventListener('click', () => {
+            registerScreen.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+        });
+
+        // Add new register handler
+        async function handleRegister(event) {
+            event.preventDefault();
+            registerError.textContent = '';
+
+            const formData = {
+                name: registerForm.regName.value.trim(),
+                dob: registerForm.regDob.value,
+                identifier: registerForm.regIdentifier.value.trim(),
+                username: registerForm.regUsername.value.trim(),
+                password: registerForm.regPassword.value
+            };
+
+            try {
+                const response = await fetch('http://localhost:5000/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage('Registration successful! Please login.', 'success');
+                    registerForm.reset();
+                    showLoginForm.click();
+                } else {
+                    registerError.textContent = data.message || 'Registration failed.';
+                }
+            } catch (error) {
+                registerError.textContent = 'Error connecting to server.';
+                console.error('Registration error:', error);
+            }
+        }
+
+        // Add the register form event listener
+        registerForm.addEventListener('submit', handleRegister);
+
+        // --- Initialization ---
+        initializeData(); // Setup initial data if needed
+
+        // Check for existing session on page load
+        const existingSession = getSessionUser();
+        if (existingSession) {
+            loggedInUserSpan.textContent = `Logged in as: ${existingSession.username} (${existingSession.role})`;
+            showDashboard(existingSession.role);
+            resetSessionTimeout();
+        }
+
+        // Add event listeners for user activity to reset session timeout
+        document.addEventListener('mousemove', resetSessionTimeout);
+        document.addEventListener('keypress', resetSessionTimeout);
+        document.addEventListener('click', resetSessionTimeout);
+
+        // Add periodic session check
+        setInterval(checkSession, 5 * 60 * 1000); // Check every 5 minutes
+
+        // Add this new function
+        async function loadUsersList() {
+            try {
+                const response = await fetch('http://localhost:5000/api/list-users', {
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to load users');
+                }
+                const users = await response.json();
+                
+                const usersListBody = document.getElementById('usersListBody');
+                usersListBody.innerHTML = '';
+                
+                if (users.length === 0) {
+                    usersListBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">No users found.</td></tr>';
+                    return;
+                }
+                
+                users.forEach(user => {
+                    const row = `
+                        <tr>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${user.id}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">${user.name}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${user.dob}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${user.identifier || 'N/A'}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${user.username}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${user.role}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${user.last_login}</td>
+                        </tr>
+                    `;
+                    usersListBody.innerHTML += row;
+                });
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showMessage('Error loading users.', 'error');
+            }
+        }
+
+        // Add event listener for the view users button
+        document.getElementById('viewUsersButton').addEventListener('click', () => {
+            const usersList = document.getElementById('usersList');
+            if (usersList.classList.contains('hidden')) {
+                usersList.classList.remove('hidden');
+                loadUsersList();
+            } else {
+                usersList.classList.add('hidden');
+            }
+        });
+
+    </script>
+
+</body>
+</html>
